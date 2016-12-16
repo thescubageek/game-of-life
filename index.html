@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="assets/js/json-sans-eval.js"></script>
     <script src="assets/js/css-browser-selector.js"></script>
     <script src="assets/js/stats.min.js"></script>
@@ -39,16 +40,6 @@
         </form>
       </div>
 
-      <div class="box layout">
-        <div class="subtitle">Layout</div>
-        <form>
-         <input type="button" id="buttonTrail" value="Trail"/>
-         <input type="button" id="buttonGrid" value="Grid" />
-         <input type="button" id="buttonColors" value="Colors" />
-         <span id="layoutMessages"></span>
-        </form>
-      </div>
-
       <div class="box patterns">
         <div class="subtitle">Patterns</div>
         <div class="button"><a href="?autoplay=0&amp;trail=0&amp;grid=1&amp;colors=1&amp;zoom=1&amp;s=%5B{%228%22:%5B60,61,98,103,109,115%5D},{%229%22:%5B60,61,77,78,97,99,102,104,108,110,114,116%5D},{%2210%22:%5B76,79,98,103,105,109,111,115,117%5D},{%2211%22:%5B76,79,104,110,112,116,118%5D},{%2212%22:%5B60,61,63,64,77,78,111,117%5D},{%2213%22:%5B60,61,63,64%5D},{%2219%22:%5B76,77,79,97,98,102,103,108,109,114,115%5D},{%2220%22:%5B76,78,79,97,99,102,104,108,110,114,116%5D},{%2221%22:%5B98,103,105,109,111,115,117%5D},{%2222%22:%5B104,110,112,116,118%5D},{%2223%22:%5B61,111,117%5D},{%2224%22:%5B60,62,76,77%5D},{%2225%22:%5B60,62,75,78%5D},{%2226%22:%5B61,76,79%5D},{%2227%22:%5B77,78,96,97,102,103,109,110,115,116%5D},{%2228%22:%5B96,98,102,104,109,111,115,117%5D},{%2229%22:%5B61,65,97,98,103,105,110,112,116,118%5D},{%2230%22:%5B60,62,64,66,104,105,111,113,117,119%5D},{%2231%22:%5B60,62,64,66,75,76,112,113,118,120%5D},{%2232%22:%5B61,65,75,78,119,120%5D},{%2233%22:%5B77,78%5D},{%2237%22:%5B78,79%5D},{%2238%22:%5B77,79%5D},{%2239%22:%5B77%5D},{%2240%22:%5B60,61,63,64,75,77%5D},{%2241%22:%5B61,63,75,76%5D},{%2242%22:%5B61,63%5D},{%2243%22:%5B60,61,63,64,114%5D},{%2244%22:%5B78,79,84,85,92,93,95,113,115%5D},{%2245%22:%5B79,84,86,92,93,95,96,97,104,112,115%5D},{%2246%22:%5B78,86,98,103,105,111,113,114%5D},{%2247%22:%5B75,77,86,87,92,93,95,96,97,102,105,110,112%5D},{%2248%22:%5B75,76,93,95,103,104,109,112%5D},{%2249%22:%5B93,95,110,111%5D},{%2250%22:%5B94%5D}%5D" title="Still Life Patterns">Still Life</a></div>
@@ -67,55 +58,6 @@
         <div class="cl">&nbsp;</div>
       </div>
 
-      <div class="box patterns">
-        <div class="subtitle">What is this?</div>
-        This page contains a Javascript implementation of the well know John Conway's Game of Life. It uses the <a href="http://dotat.at/prog/life/life.html" title="Tony Finch's List Life Algorithm">List Life</a> algorithm (by Tony Finch) and a Canvas interface for drawing.
-        <br /><br />
-        This is a work in progress and I will add some new features in the near future:
-        <ul>
-          <li>Zoom controls</li>
-          <li>Canvas navigation controls</li>
-          <li>More patterns</li>
-          <li>Proper benchmark support</li>
-          <li>...</li>
-        </ul>
-
-        <h4>Previous versions</h4>
-        <ul>
-          <li>1.0.0 - First public release. It uses the simplest algorithm possible and a table for drawing. Online here: <a href="http://pmav.eu/stuff/javascript-game-of-life-v1.0/" title="Javascript Conway's Game of Life 1.0.0">pmav.eu</a>.</li>
-          <li>2.0.0 - Private release, first implementation of the List Life algorithm.</li>
-          <li>3.1.1 - Current version, List Life and Canvas.</li>
-        </ul>
-
-        <h4>License</h4>
-        This work is licenced under a <a rel="license" href="LICENSE.md">MIT license</a> (except any 3rd party code).
-
-        <h4>3rd Party</h4>
-        Powered by <a href="http://rafael.adm.br/css_browser_selector" title="CSS Browser Selector">CSS Browser Selector</a> and <a href="http://code.google.com/p/json-sans-eval/" title="JSON Sans Eval">JSON Sans Eval</a>.
-
-        <div class="cl">&nbsp;</div>
-      </div>
-
-      <div class="box patterns">
-        <div class="subtitle">Links</div>
-        Some links about Conway's Game of Life:
-        <ul>
-            <li><a href="http://dotat.at/prog/life/life.html" title="Tony Finch's List Life Algorithm">Tony Finch's List Life Algorithm</a></li>
-            <li><a href="http://golly.sourceforge.net" title="Golly - Application for exploring Conway's Game of Life">Golly - Application for exploring Conway's Game of Life</a></li>
-            <li><a href="http://en.wikipedia.org/wiki/Conway's_Game_of_Life" title="Conway's Game of Life @ Wikipedia">Conway's Game of Life @ Wikipedia</a></li>
-            <li><a href="http://fano.ics.uci.edu/ca/rules/b3s23/" title="Life (B3/S23) @ Fano">Life (B3/S23) @ Fano</a></li>
-            <li><a href="http://www.radicaleye.com/lifepage/" title="Life Page by Paul Callahan">Life Page by Paul Callahan</a></li>
-            <li><a href="http://entropymine.com/jason/life/status.html" title="Game of Life Status page">Game of Life Status page</a></li>
-            <li><a href="http://www.argentum.freeserve.co.uk/lex_home.htm" title="Life Lexicon Home Page">Life Lexicon Home Page</a></li>
-        </ul>
-        <div class="cl">&nbsp;</div>
-      </div>
-
-      <div id="footer">
-        Conway's Game of Life (B3/S23) v3.1.1 | <a href="http://pmav.eu">pmav.eu</a> | HTML 5 | 2008-2010
-      </div>
     </div>
-
-    <a href="https://github.com/pmav/game-of-life"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
   </body>
 </html>

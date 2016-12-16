@@ -66,6 +66,31 @@
       schedule : false
     },
 
+
+    // Grid style
+    grid : {
+      current : 0,
+
+      schemes : [
+      {
+        color : '#000000'
+      },
+
+      {
+        color : '#FFFFFF'
+      },
+
+      {
+        color : '#666666'
+      },
+
+      {
+        color : '' // Special case: 0px grid
+      }
+      ]
+    },
+
+
     // Zoom level
     zoom : {
       current : 0,
@@ -93,18 +118,51 @@
       ]
     },
 
+
+    // Cell colors
+    colors : {
+      current : 0,
+      schedule : false,
+
+      schemes : [
+      {
+        dead : '#FFFFFF',
+        trail : ['#B5ECA2'],
+        alive : ['#9898FF', '#8585FF', '#7272FF', '#5F5FFF', '#4C4CFF', '#3939FF', '#2626FF', '#1313FF', '#0000FF', '#1313FF', '#2626FF', '#3939FF', '#4C4CFF', '#5F5FFF', '#7272FF', '#8585FF']
+      },
+
+      {
+        dead : '#FFFFFF',
+        trail : ['#EE82EE', '#FF0000', '#FF7F00', '#FFFF00', '#008000 ', '#0000FF', '#4B0082'],
+        alive : ['#FF0000', '#FF7F00', '#FFFF00', '#008000 ', '#0000FF', '#4B0082', '#EE82EE']
+      },
+
+      {
+        dead : '#FFFFFF',
+        trail : ['#9898FF', '#8585FF', '#7272FF', '#5F5FFF', '#4C4CFF', '#3939FF', '#2626FF', '#1313FF', '#0000FF', '#1313FF', '#2626FF', '#3939FF', '#4C4CFF', '#5F5FFF', '#7272FF', '#8585FF'],
+        alive : ['#000000']
+      }
+
+      ]
+    },
+
+
     /**
          * On Load Event
          */
     init : function() {
-      this.listLife.init();   // Reset/init algorithm
-      this.loadConfig();      // Load config from URL (autoplay, colors, zoom, ...)
-      this.loadState();       // Load state from URL
-      this.keepDOMElements(); // Keep DOM References (getElementsById)
-      this.canvas.init();     // Init canvas GUI
-      this.registerEvents();  // Register event handlers
+      try {
+        this.listLife.init();   // Reset/init algorithm
+        this.loadConfig();      // Load config from URL (autoplay, colors, zoom, ...)
+        this.loadState();       // Load state from URL
+        this.keepDOMElements(); // Keep DOM References (getElementsById)
+        this.canvas.init();     // Init canvas GUI
+        this.registerEvents();  // Register event handlers
 
-      this.prepare();
+        this.prepare();
+      } catch (e) {
+        alert("Error: "+e);
+      }
     },
 
 
@@ -112,10 +170,22 @@
          * Load config from URL
          */
     loadConfig : function() {
-      var grid, zoom;
+      var colors, grid, zoom;
 
       this.autoplay = this.helpers.getUrlParameter('autoplay') === '1' ? true : this.autoplay;
       this.trail.current = this.helpers.getUrlParameter('trail') === '1' ? true : this.trail.current;
+
+      // Initial color config
+      colors = parseInt(this.helpers.getUrlParameter('colors'), 10);
+      if (isNaN(colors) || colors < 1 || colors > GOL.colors.schemes.length) {
+        colors = 1;
+      }
+
+      // Initial grid config
+      grid = parseInt(this.helpers.getUrlParameter('grid'), 10);
+      if (isNaN(grid) || grid < 1 || grid > GOL.grid.schemes.length) {
+        grid = 1;
+      }
 
       // Initial zoom config
       zoom = parseInt(this.helpers.getUrlParameter('zoom'), 10);
@@ -123,6 +193,8 @@
         zoom = 1;
       }
 
+      this.colors.current = colors - 1;
+      this.grid.current = grid - 1;
       this.zoom.current = zoom - 1;
 
       this.rows = this.zoom.schemes[this.zoom.current].rows;
@@ -131,8 +203,8 @@
 
 
     /**
-     * Load world state from URL parameter
-     */
+         * Load world state from URL parameter
+         */
     loadState : function() {
       var state, i, j, y, s = this.helpers.getUrlParameter('s');
 
@@ -148,7 +220,7 @@
         for (i = 0; i < state.length; i++) {
           for (y in state[i]) {
             for (j = 0 ; j < state[i][y].length ; j++) {
-              this.listLife.addCell(state[i][y][j], parseInt(y, 10), this.randomColor(), this.listLife.actualState);
+              this.listLife.addCell(state[i][y][j], parseInt(y, 10), this.listLife.actualState);
             }
           }
         }
@@ -163,22 +235,10 @@
       var i, liveCells = (this.rows * this.columns) * 0.12;
 
       for (i = 0; i < liveCells; i++) {
-        this.listLife.addCell(this.helpers.random(0, this.columns - 1), this.helpers.random(0, this.rows - 1), this.randomColor(), this.listLife.actualState);
+        this.listLife.addCell(this.helpers.random(0, this.columns - 1), this.helpers.random(0, this.rows - 1), this.listLife.actualState);
       }
 
       this.listLife.nextGeneration();
-    },
-
-     /**
-     * Create a random pattern
-     */
-    randomColor: function() {
-      var letters = '0123456789ABCDEF';
-      var color = '#';
-      for (var i = 0; i < 6; i++ ) {
-          color += letters[Math.floor(Math.random() * 16)];
-      }
-      return color;
     },
 
 
@@ -198,9 +258,9 @@
       this.generation = this.times.algorithm = this.times.gui = 0;
       this.mouseDown = this.clear.schedule = false;
 
-      this.element.generation.html('0');
-      this.element.livecells.html('0');
-      this.element.steptime.html('0 / 0 (0 / 0)');
+      this.element.generation.innerHTML = '0';
+      this.element.livecells.innerHTML = '0';
+      this.element.steptime.innerHTML = '0 / 0 (0 / 0)';
 
       this.canvas.clearWorld(); // Reset GUI
       this.canvas.drawWorld(); // Draw State
@@ -217,11 +277,11 @@
      * Save DOM references for this session (one time execution)
      */
     keepDOMElements : function() {
-      this.element.generation = $('#generation');
-      this.element.steptime = $('#steptime');
-      this.element.livecells = $('#livecells');
-      this.element.messages.layout = $('#layoutMessages');
-      this.element.hint = $('#hint');
+      this.element.generation = document.getElementById('generation');
+      this.element.steptime = document.getElementById('steptime');
+      this.element.livecells = document.getElementById('livecells');
+      this.element.messages.layout = document.getElementById('layoutMessages');
+      this.element.hint = document.getElementById('hint');
     },
 
 
@@ -230,17 +290,20 @@
      * Register event handlers for this session (one time execution)
      */
     registerEvents : function() {
+
       // Keyboard Events
-      $('body').on('keyup', this.handlers.keyboard);
+      this.helpers.registerEvent(document.body, 'keyup', this.handlers.keyboard, false);
 
       // Controls
-      $('#buttonRun').on('click', this.handlers.buttons.run);
-      $('#buttonStep').on('click', this.handlers.buttons.step);
-      $('#buttonClear').on('click', this.handlers.buttons.clear);
-      $('#buttonExport').on('click', this.handlers.buttons.export_);
+      this.helpers.registerEvent(document.getElementById('buttonRun'), 'click', this.handlers.buttons.run, false);
+      this.helpers.registerEvent(document.getElementById('buttonStep'), 'click', this.handlers.buttons.step, false);
+      this.helpers.registerEvent(document.getElementById('buttonClear'), 'click', this.handlers.buttons.clear, false);
+      this.helpers.registerEvent(document.getElementById('buttonExport'), 'click', this.handlers.buttons.export_, false);
 
       // Layout
-      $('#buttonTrail').on('click', this.handlers.buttons.trail);
+      this.helpers.registerEvent(document.getElementById('buttonTrail'), 'click', this.handlers.buttons.trail, false);
+      this.helpers.registerEvent(document.getElementById('buttonGrid'), 'click', this.handlers.buttons.grid, false);
+      this.helpers.registerEvent(document.getElementById('buttonColors'), 'click', this.handlers.buttons.colors, false);
     },
 
 
@@ -248,27 +311,32 @@
      * Run Next Step
      */
     nextStep : function() {
-      var i, x, y, color, r, liveCellNumber, algorithmTime, guiTime;
+      var i, x, y, r, liveCellNumber, algorithmTime, guiTime;
 
       // Algorithm run
+
       algorithmTime = (new Date());
+
       liveCellNumber = GOL.listLife.nextGeneration();
+
       algorithmTime = (new Date()) - algorithmTime;
 
+
       // Canvas run
+
       guiTime = (new Date());
 
       for (i = 0; i < GOL.listLife.redrawList.length; i++) {
+        debugger;
         x = GOL.listLife.redrawList[i][0];
         y = GOL.listLife.redrawList[i][1];
-        color = GOL.listLife.redrawList[i][2];
 
         if (GOL.listLife.redrawList[i][2] === 1) {
-          GOL.canvas.changeCelltoAlive(x, y, color);
+          GOL.canvas.changeCelltoAlive(x, y);
         } else if (GOL.listLife.redrawList[i][2] === 2) {
-          GOL.canvas.keepCellAlive(x, y, color);
+          GOL.canvas.keepCellAlive(x, y);
         } else {
-          GOL.canvas.changeCelltoDead(x, y, color);
+          GOL.canvas.changeCelltoDead(x, y);
         }
       }
 
@@ -282,6 +350,18 @@
         GOL.canvas.drawWorld();
       }
 
+      // Change Grid
+      if (GOL.grid.schedule) {
+        GOL.grid.schedule = false;
+        GOL.canvas.drawWorld();
+      }
+
+      // Change Colors
+      if (GOL.colors.schedule) {
+        GOL.colors.schedule = false;
+        GOL.canvas.drawWorld();
+      }
+
       // Running Information
       GOL.generation++;
       GOL.element.generation.innerHTML = GOL.generation;
@@ -290,7 +370,7 @@
       r = 1.0/GOL.generation;
       GOL.times.algorithm = (GOL.times.algorithm * (1 - r)) + (algorithmTime * r);
       GOL.times.gui = (GOL.times.gui * (1 - r)) + (guiTime * r);
-      GOL.element.steptime.html(algorithmTime + ' / '+guiTime+' ('+Math.round(GOL.times.algorithm) + ' / '+Math.round(GOL.times.gui)+')');
+      GOL.element.steptime.innerHTML = algorithmTime + ' / '+guiTime+' ('+Math.round(GOL.times.algorithm) + ' / '+Math.round(GOL.times.gui)+')';
 
       // Flow Control
       if (GOL.running) {
@@ -381,14 +461,14 @@
          * Button Handler - Run
          */
         run : function() {
-          GOL.element.hint.hide();
+          GOL.element.hint.style.display = 'none';
 
           GOL.running = !GOL.running;
           if (GOL.running) {
             GOL.nextStep();
-            $('#buttonRun').value = 'Stop';
+            document.getElementById('buttonRun').value = 'Stop';
           } else {
-            $('#buttonRun').value = 'Run';
+            document.getElementById('buttonRun').value = 'Run';
           }
         },
 
@@ -410,7 +490,7 @@
           if (GOL.running) {
             GOL.clear.schedule = true;
             GOL.running = false;
-            $('#buttonRun').value = 'Run';
+            document.getElementById('buttonRun').value = 'Run';
           } else {
             GOL.cleanUp();
           }
@@ -421,7 +501,7 @@
          * Button Handler - Remove/Add Trail
          */
         trail : function() {
-          GOL.element.messages.layout.html(GOL.trail.current ? 'Trail is Off' : 'Trail is On');
+          GOL.element.messages.layout.innerHTML = GOL.trail.current ? 'Trail is Off' : 'Trail is On';
           GOL.trail.current = !GOL.trail.current;
           if (GOL.running) {
             GOL.trail.schedule = true;
@@ -429,6 +509,35 @@
             GOL.canvas.drawWorld();
           }
         },
+
+
+        /**
+         *
+         */
+        colors : function() {
+          GOL.colors.current = (GOL.colors.current + 1) % GOL.colors.schemes.length;
+          GOL.element.messages.layout.innerHTML = 'Color Scheme #' + (GOL.colors.current + 1);
+          if (GOL.running) {
+            GOL.colors.schedule = true; // Delay redraw
+          } else {
+            GOL.canvas.drawWorld(); // Force complete redraw
+          }
+        },
+
+
+        /**
+         *
+         */
+        grid : function() {
+          GOL.grid.current = (GOL.grid.current + 1) % GOL.grid.schemes.length;
+          GOL.element.messages.layout.innerHTML = 'Grid Scheme #' + (GOL.grid.current + 1);
+          if (GOL.running) {
+            GOL.grid.schedule = true; // Delay redraw
+          } else {
+            GOL.canvas.drawWorld(); // Force complete redraw
+          }
+        },
+
 
         /**
          * Button Handler - Export State
@@ -452,12 +561,14 @@
 
             params = '?autoplay=0' +
             '&trail=' + (GOL.trail.current ? '1' : '0') +
+            '&grid=' + (GOL.grid.current + 1) +
+            '&colors=' + (GOL.colors.current + 1) +
             '&zoom=' + (GOL.zoom.current + 1) +
             '&s=['+ cellState +']';
 
-            $('#exportUrlLink').href = params;
-            $('#exportTinyUrlLink').href = 'http://tinyurl.com/api-create.php?url='+ url + params;
-            $('#exportUrl').style.display = 'inline';
+            document.getElementById('exportUrlLink').href = params;
+            document.getElementById('exportTinyUrlLink').href = 'http://tinyurl.com/api-create.php?url='+ url + params;
+            document.getElementById('exportUrl').style.display = 'inline';
           }
         }
 
@@ -484,16 +595,15 @@
        */
       init : function() {
 
-        this.canvasElem = $('#canvas');
-        this.canvas = this.canvasElem[0];
+        this.canvas = document.getElementById('canvas');
         this.context = this.canvas.getContext('2d');
 
         this.cellSize = GOL.zoom.schemes[GOL.zoom.current].cellSize;
         this.cellSpace = 1;
 
-        this.canvasElem.on('mousedown', GOL.handlers.canvasMouseDown);
-        this.canvasElem.on('mousemove', GOL.handlers.canvasMouseMove);
-        $(document).on('mouseup', GOL.handlers.canvasMouseUp);
+        GOL.helpers.registerEvent(this.canvas, 'mousedown', GOL.handlers.canvasMouseDown, false);
+        GOL.helpers.registerEvent(document, 'mouseup', GOL.handlers.canvasMouseUp, false);
+        GOL.helpers.registerEvent(this.canvas, 'mousemove', GOL.handlers.canvasMouseMove, false);
 
         this.clearWorld();
       },
@@ -520,9 +630,16 @@
        * drawWorld
        */
       drawWorld : function() {
-        var i, j, color, alive, cell;
+        var i, j;
 
-        this.width = this.height = 0;
+        // Special no grid case
+        if (GOL.grid.schemes[GOL.grid.current].color === '') {
+          this.setNoGridOn();
+          this.width = this.height = 0;
+        } else {
+          this.setNoGridOff();
+          this.width = this.height = 1;
+        }
 
         // Dynamic canvas size
         this.width = this.width + (this.cellSpace * GOL.columns) + (this.cellSize * GOL.columns);
@@ -532,16 +649,16 @@
         this.canvas.setAttribute('height', this.height);
 
         // Fill background
+        this.context.fillStyle = GOL.grid.schemes[GOL.grid.current].color;
         this.context.fillRect(0, 0, this.width, this.height);
 
         for (i = 0 ; i < GOL.columns; i++) {
           for (j = 0 ; j < GOL.rows; j++) {
-            cell = GOL.listLife.getCell(i, j);
-            alive = cell ? true : false;
-            color = cell ? cell[2] : '#000000';
-
-            this.context.fillStyle = color;
-            this.drawCell(i, j, color, alive);
+            if (GOL.listLife.isAlive(i, j)) {
+              this.drawCell(i, j, true);
+            } else {
+              this.drawCell(i, j, false);
+            }
           }
         }
       },
@@ -568,11 +685,11 @@
       /**
        * drawCell
        */
-      drawCell : function (i, j, color, alive) {
+      drawCell : function (i, j, alive) {
         if (alive) {
           if (this.age[i][j] > -1)
-            //this.context.fillStyle = GOL.colors.schemes[GOL.colors.current].alive[this.age[i][j] % GOL.colors.schemes[GOL.colors.current].alive.length];
-            this.context.fillStyle = color;
+            this.context.fillStyle = GOL.colors.schemes[GOL.colors.current].alive[this.age[i][j] % GOL.colors.schemes[GOL.colors.current].alive.length];
+
         } else {
           if (GOL.trail.current && this.age[i][j] < 0) {
             //this.context.fillStyle = GOL.colors.schemes[GOL.colors.current].trail[(this.age[i][j] * -1) % GOL.colors.schemes[GOL.colors.current].trail.length];
@@ -593,12 +710,11 @@
        */
       switchCell : function(i, j) {
         if(GOL.listLife.isAlive(i, j)) {
-          GOL.listLife.removeCell(i, j);
-          this.changeCelltoDead(i, j, '#000000');
+          this.changeCelltoDead(i, j);
+          GOL.listLife.removeCell(i, j, GOL.listLife.actualState);
         }else {
-          var color = GOL.randomColor();
-          GOL.listLife.addCell(i, j, color, GOL.listLife.actualState);
-          this.changeCelltoAlive(i, j, color);
+          this.changeCelltoAlive(i, j);
+          GOL.listLife.addCell(i, j, GOL.listLife.actualState);
         }
       },
 
@@ -606,10 +722,10 @@
       /**
        * keepCellAlive
        */
-      keepCellAlive : function(i, j, color) {
+      keepCellAlive : function(i, j) {
         if (i >= 0 && i < GOL.columns && j >=0 && j < GOL.rows) {
           this.age[i][j]++;
-          this.drawCell(i, j, color, true);
+          this.drawCell(i, j, true);
         }
       },
 
@@ -617,10 +733,10 @@
       /**
        * changeCelltoAlive
        */
-      changeCelltoAlive : function(i, j, color) {
+      changeCelltoAlive : function(i, j) {
         if (i >= 0 && i < GOL.columns && j >=0 && j < GOL.rows) {
           this.age[i][j] = 1;
-          this.drawCell(i, j, color, true);
+          this.drawCell(i, j, true);
         }
       },
 
@@ -628,10 +744,10 @@
       /**
        * changeCelltoDead
        */
-      changeCelltoDead : function(i, j, color) {
+      changeCelltoDead : function(i, j) {
         if (i >= 0 && i < GOL.columns && j >=0 && j < GOL.rows) {
           this.age[i][j] = -this.age[i][j]; // Keep trail
-          this.drawCell(i, j, color, false);
+          this.drawCell(i, j, false);
         }
       }
 
@@ -655,7 +771,7 @@
       },
 
       nextGeneration : function() {
-        var x, y, color, i, j, m, n, key, t1, t2, alive = 0, neighbours, deadNeighbours, allDeadNeighbours = {}, newState = [];
+        var x, y, i, j, m, n, key, t1, t2, alive = 0, neighbours, deadNeighbours, allDeadNeighbours = {}, newState = [];
         this.redrawList = [];
 
         for (i = 0; i < this.actualState.length; i++) {
@@ -686,13 +802,11 @@
             }
 
             if (!(neighbours === 0 || neighbours === 1 || neighbours > 3)) {
-              //debugger;
-              color = GOL.randomColor();
-              this.addCell(x, y, color, newState);
+              this.addCell(x, y, newState);
               alive++;
-              this.redrawList.push([x, y, color, 2]); // Keep alive
+              this.redrawList.push([x, y, 2]); // Keep alive
             } else {
-              this.redrawList.push([x, y, '#000000', 0]); // Kill cell
+              this.redrawList.push([x, y, 0]); // Kill cell
             }
           }
         }
@@ -703,15 +817,15 @@
             key = key.split(',');
             t1 = parseInt(key[0], 10);
             t2 = parseInt(key[1], 10);
-            color = GOL.randomColor();
 
-            this.addCell(t1, t2, color, newState);
+            this.addCell(t1, t2, newState);
             alive++;
-            this.redrawList.push([t1, t2, color, 1]);
+            this.redrawList.push([t1, t2, 1]);
           }
         }
 
         this.actualState = newState;
+
         return alive;
       },
 
@@ -827,38 +941,34 @@
       },
 
 
-      getCell : function(x, y){
-        var i, j;
-        for (i = 0; i < this.actualState.length; i++) {
-          if (this.actualState[i][0] === y) {
-            for (j = 1; j < this.actualState[i].length; j++) {
-              if (this.actualState[i][j] === x) {
-                return this.actualState[i];
-              }
-            }
-          }
-        }
-      },
-
       /**
        *
        */
       isAlive : function(x, y) {
-        return this.getCell(x, y) ? true : false;
+        var i, j;
+
+        for (i = 0; i < this.actualState.length; i++) {
+          if (this.actualState[i][0] === y) {
+            for (j = 1; j < this.actualState[i].length; j++) {
+              if (this.actualState[i][j] === x) {
+                return true;
+              }
+            }
+          }
+        }
+        return false;
       },
 
-      cellColor: function(x, y) {
-        var cell = this.getCell(x, y);
-        return cell ? cell[2] : '#000000';
-      },
 
       /**
        *
        */
       removeCell : function(x, y, state) {
         var i, j;
+
         for (i = 0; i < state.length; i++) {
           if (state[i][0] === y) {
+
             if (state[i].length === 2) { // Remove all Row
               state.splice(i, 1);
             } else { // Remove Element
@@ -872,19 +982,20 @@
         }
       },
 
+
       /**
        *
        */
-      addCell : function(x, y, color, state) {
+      addCell : function(x, y, state) {
         if (state.length === 0) {
-          state.push([y, x, color]);
+          state.push([y, x]);
           return;
         }
 
         var k, n, m, tempRow, newState = [], added;
 
         if (y < state[0][0]) { // Add to Head
-          newState = [[y,x,color]];
+          newState = [[y,x]];
           for (k = 0; k < state.length; k++) {
             newState[k+1] = state[k];
           }
@@ -896,7 +1007,7 @@
           return;
 
         } else if (y > state[state.length - 1][0]) { // Add to Tail
-          state[state.length] = [y,x,color];
+          state[state.length] = [y, x];
           return;
 
         } else { // Add to Middle
@@ -924,7 +1035,7 @@
               newState = [];
               for (k = 0; k < state.length; k++) {
                 if (k === n) {
-                  newState[k] = [y,x,color];
+                  newState[k] = [y,x];
                   newState[k+1] = state[k];
                 } else if (k < n) {
                   newState[k] = state[k];
@@ -981,6 +1092,19 @@
         return this.urlParameters[name];
       },
 
+
+      /**
+       * Register Event
+       */
+      registerEvent : function (element, event, handler, capture) {
+        if (/msie/i.test(navigator.userAgent)) {
+          element.attachEvent('on' + event, handler);
+        } else {
+          element.addEventListener(event, handler, capture);
+        }
+      },
+
+
       /**
        *
        */
@@ -1026,7 +1150,8 @@
   /**
    * Init on 'load' event
    */
-  $(window).on('load', function (){
+  GOL.helpers.registerEvent(window, 'load', function () {
     GOL.init();
-  });
+  }, false);
+
 }());
