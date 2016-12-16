@@ -1,7 +1,9 @@
 var gulp       = require('gulp'),
+    concat     = require('gulp-concat'),
     uglify     = require('gulp-uglify'),
-    scss       = require('gulp-sass'),
+    debug      = require('gulp-debug'),
     cache      = require('gulp-cached'),
+    scss       = require('gulp-sass'),
     babel      = require('gulp-babel'),
     rename     = require("gulp-rename"),
     livereload = require('gulp-livereload'),
@@ -24,7 +26,7 @@ gulp.task('es2015', function()  {
       var a = s.split('/');
       path.dirname = s.replace(a[a.length-1], '');
     }))
-    .pipe(gulp.dest(function(file) { return file.base; }))
+    .pipe(gulp.dest(function(file) { return "assets/js"; }))
     .pipe(livereload());
 });
 
@@ -38,7 +40,7 @@ gulp.task('scss', function () {
       var a = s.split('/');
       path.dirname = s.replace(a[a.length-1], '');
     }))
-    .pipe(gulp.dest(function(file) { return file.base; }))
+    .pipe(gulp.dest(function(file) { return "assets/css"; }))
     .pipe(livereload());
 });
 
@@ -46,10 +48,6 @@ gulp.task('watch', function() {
   livereload.listen();
   gulp.watch(paths.scss, ['scss']);
   gulp.watch(paths.es2015, ['es2015']);
-  //Squirelly hack, needed to get .scss files to livereload gulp-livereload v3.8.1 is screwey, might delete in future updates.
-  gulp.watch(paths.scss, function(ev){
-    livereload.changed(ev.path);
-  });
 });
 
 gulp.task('default', ['watch', 'scss', 'es2015']);
