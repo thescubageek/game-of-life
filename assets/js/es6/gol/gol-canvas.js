@@ -32,12 +32,11 @@ class GOLCanvas {
   }
 
   clearWorld() {
-    var i, j;
     // Init ages (Canvas reference)
     this.age = [];
-    for (i = 0; i < GOL.columns; i++) {
+    for (let i = 0; i < GOL.columns; i++) {
       this.age[i] = [];
-      for (j = 0; j < GOL.rows; j++) {
+      for (let j = 0; j < GOL.rows; j++) {
         this.age[i][j] = 0; // Dead
       }
     }
@@ -47,30 +46,32 @@ class GOLCanvas {
    * drawWorld
    */
   drawWorld(list=[]) {
-    var i, j, color, alive, cell;
     this.cellList = list;
-    this.width = this.height = 0;
-
-    // Dynamic canvas size
-    this.width = this.width + (this.cellSpace * this.columns) + (this.cellSize * this.columns);
-    this.canvasElem.width(this.width);
-
-    this.height = this.height + (this.cellSpace * this.rows) + (this.cellSize * this.rows);
-    this.canvasElem.height(this.height);
+    this.setDimensions();
 
     // Fill background
     this.context.fillRect(0, 0, this.width, this.height);
 
-    for (i = 0 ; i < this.columns; i++) {
-      for (j = 0 ; j < this.rows; j++) {
-        cell = this.cellList.getCell(i, j);
-        alive = cell ? true : false;
-        color = cell ? cell[2] : '#000000';
+    for (let i = 0 ; i < this.columns; i++) {
+      for (let j = 0 ; j < this.rows; j++) {
+        let cell = this.cellList.getCell(i, j);
+        let alive = cell ? true : false;
+        let color = cell ? cell[2] : '#000000';
 
         this.context.fillStyle = color;
         this.drawCell(i, j, color, alive);
       }
     }
+  }
+
+  setDimensions(){
+    this.width = this.height = 0;
+
+    this.width = this.width + (this.cellSpace * this.columns) + (this.cellSize * this.columns);
+    this.canvasElem.width(this.width);
+
+    this.height = this.height + (this.cellSpace * this.rows) + (this.cellSize * this.rows);
+    this.canvasElem.height(this.height);
   }
 
   /**
@@ -117,7 +118,7 @@ class GOLCanvas {
     if(this.cellList.isAlive(i, j)) {
       this.cellList.removeCell(i, j);
       this.changeCelltoDead(i, j, '#000000');
-    }else {
+    } else {
       let color = this.helper.randomColor();
       this.cellList.addCell(i, j, color, this.cellList.currentState);
       this.changeCelltoAlive(i, j, color);

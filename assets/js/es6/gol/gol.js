@@ -26,6 +26,7 @@ class GOL {
     this.running = false;
     this.autoplay = false;
     this.urlParameters = null;
+    this.helper = new GOLHelper();
   }
 
   setupZoom(){
@@ -82,18 +83,13 @@ class GOL {
     return min <= max ? min + Math.round(Math.random() * (max - min)) : null;
   }
 
-  /**
-   * Load config from URL
-   */
   loadConfig() {
-    var grid, zoom;
-
     this.autoplay = this.getUrlParameter('autoplay') === '1' ? true : this.autoplay;
     this.trail.current = this.getUrlParameter('trail') === '1' ? true : this.trail.current;
 
     // Initial zoom config
-    zoom = parseInt(this.getUrlParameter('zoom'), 10);
-    if (isNaN(zoom) || zoom < 1 || zoom > GOL.zoom.schemes.length) {
+    let zoom = parseInt(this.getUrlParameter('zoom'), 10);
+    if (isNaN(zoom) || zoom < 1 || zoom > this.zoom.schemes.length) {
       zoom = 1;
     }
 
@@ -131,7 +127,7 @@ class GOL {
       for (let i = 0; i < state.length; i++) {
         for (let y in state[i]) {
           for (let j = 0 ; j < state[i][y].length ; j++) {
-            this.listLife.addCell(state[i][y][j], parseInt(y, 10), this.randomColor(), this.listLife.currentState);
+            this.game.addCell(state[i][y][j], parseInt(y, 10), this.helper.randomColor(), this.game.currentState);
           }
         }
       }
@@ -142,13 +138,12 @@ class GOL {
    * Create a random pattern
    */
   randomState() {
-    var i, liveCells = (this.rows * this.columns) * 0.12;
+    const liveCells = (this.rows * this.columns) * 0.12;
 
-    for (i = 0; i < liveCells; i++) {
-      this.listLife.addCell(this.random(0, this.columns-1), this.random(0, this.rows-1), this.randomColor(), this.listLife.currentState);
+    for (let i = 0; i < liveCells; i++) {
+      this.game.addCell(this.random(0, this.columns-1), this.random(0, this.rows-1), this.helper.randomColor(), this.game.currentState);
     }
-
-    this.listLife.nextGeneration();
+    this.game.nextGeneration();
   }
 
   /**
@@ -344,3 +339,5 @@ class GOL {
     }
   }
 }
+
+export { GOL }
