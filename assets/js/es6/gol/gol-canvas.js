@@ -12,7 +12,6 @@ class GOLCanvas {
     this.age = null;
     this.helper = new GOLHelper();
     this.game = this.configs['game'];
-    this.cellList = null;
 
     this.columns = this.configs['columns'];
     this.rows = this.configs['rows'];
@@ -42,8 +41,7 @@ class GOLCanvas {
     }
   }
 
-  draw(list=[]) {
-    this.cellList = list;
+  draw(state) {
     if (this.trail.schedule) {
       this.trail.schedule = false;
     }
@@ -54,9 +52,9 @@ class GOLCanvas {
 
     for (let i = 0 ; i < this.columns; i++) {
       for (let j = 0 ; j < this.rows; j++) {
-        let cell = this.game.getCell(i, j);
+        let cell = state.getCell(i, j);
         let alive = cell ? true : false;
-        let color = cell && cell[2] ? cell[2] : '#ff0000';
+        let color = cell && cell.params.color ? cell.params.color : this.helper.randomPrimaryColor();
 
         this.context.fillStyle = color;
         this.drawCell(i, j, color, alive);
@@ -115,56 +113,21 @@ class GOLCanvas {
    * switchCell
    */
   switchCell(i, j) {
-    if(this.cellList.isAlive(i, j)) {
-      this.cellList.removeCell(i, j);
-      this.changeCelltoDead(i, j, '#000000');
+    let state = this.game.currentState;
+    if(state.hasCell(i, j)) {
+      state.removeCell(i, j);
     } else {
-      //let color = this.helper.randomColor();
-      //this.cellList.addCell(i, j, color, this.cellList.currentState);
-      this.game.addCell(i, j, this.cellList.currentState);
-      this.changeCelltoAlive(i, j, color);
+      let color = this.helper.randomPrimaryColor();
+      state.addCell(i, j, color);
     }
-  }
-
-  /**
-   * keepCellAlive
-   */
-  keepCellAlive(i, j, color) {
-    if (i >= 0 && i < this.columns && j >=0 && j < this.rows) {
-      this.age[i][j]++;
-      this.drawCell(i, j, color, true);
-    }
-  }
-
-  /**
-   * changeCelltoAlive
-   */
-  changeCelltoAlive(i, j, color) {
-    if (i >= 0 && i < this.columns && j >=0 && j < this.rows) {
-      this.age[i][j] = 1;
-      this.drawCell(i, j, color, true);
-    }
-  }
-
-  /**
-   * changeCelltoDead
-   */
-  changeCelltoDead(i, j, color) {
-    if (i >= 0 && i < this.columns && j >=0 && j < this.rows) {
-      this.age[i][j] = -this.age[i][j]; // Keep trail
-      this.drawCell(i, j, color, false);
-    }
+    this.draw(state);
   }
 
   mousePosition(e) {
     // http://www.malleus.de/FAQ/getImgMousePos.html
     // http://www.quirksmode.org/js/events_properties.html#position
-    var event, x, y, domObject, posx = 0, posy = 0, top = 0, left = 0, cellSize = GOL.zoom.schemes[GOL.zoom.current].cellSize + 1;
-
-    event = e;
-    if (!event) {
-      event = window.event;
-    }
+    let posx = 0, posy = 0, top = 0, left = 0, cellSize = GOL.zoom.schemes[GOL.zoom.current].cellSize + 1;
+    let event = e || window.event;
 
     if (event.pageX || event.pageY)   {
       posx = event.pageX;
@@ -174,7 +137,7 @@ class GOLCanvas {
       posy = event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
     }
 
-    domObject = event.target || event.srcElement;
+    let domObject = event.target || event.srcElement;
 
     while ( domObject.offsetParent ) {
       left += domObject.offsetLeft;
@@ -185,8 +148,8 @@ class GOLCanvas {
     domObject.pageTop = top;
     domObject.pageLeft = left;
 
-    x = Math.ceil(((posx - domObject.pageLeft)/cellSize) - 1);
-    y = Math.ceil(((posy - domObject.pageTop)/cellSize) - 1);
+    let x = Math.ceil(((posx - domObject.pageLeft)/cellSize) - 1);
+    let y = Math.ceil(((posy - domObject.pageTop)/cellSize) - 1);
 
     return [x, y];
   }

@@ -2,7 +2,7 @@ class GOL {
   constructor(){
     this.stats = new GOLStats();
     this.setup();
-    this.initialize();
+    this.load();
   }
 
   setup(){
@@ -38,11 +38,10 @@ class GOL {
         layout: $('#layoutMessages')
       },
       buttons: {
-        run: $('#buttonRun'),
-        step: $('#buttonStep'),
-        clear: $('#buttonClear'),
-        export: $('#buttonExport'),
-        trail: $('#buttonTrail')
+        runBtn: $('#buttonRun'),
+        stepBtn: $('#buttonStep'),
+        clearBtn: $('#buttonClear'),
+        exportBtn: $('#buttonExport')
       }
     }
   }
@@ -54,7 +53,6 @@ class GOL {
   }
 
   loadCanvas(){
-    this.helper = new GOLHelper();
     this.canvas = new GOLCanvas({
       game: this.game,
       columns: this.columns,
@@ -64,8 +62,9 @@ class GOL {
     this.canvas.clear();
   }
 
-  initialize(){
-    this.game = new GOLGameState();  // Reset/init algorithm
+  load(){
+    this.game = new GOLGame();  // Reset/init algorithm
+    this.helper = new GOLHelper(); // method helper
     this.loadConfig();          // Load config from URL (autoplay, colors, zoom, ...)
     this.loadGameState();           // Load state from URL
     this.loadCanvas();     // Init canvas GUI
@@ -75,6 +74,42 @@ class GOL {
 
   random(min, max) {
     return min <= max ? min + Math.round(Math.random() * (max - min)) : null;
+  }
+
+  /**
+   * Run Next Step
+   */
+  nextStep() {
+    // Algorithm run
+    let algorithmTime = new Date();
+    let liveCellNumber = this.game.nextGeneration();
+    algorithmTime = (new Date()) - algorithmTime;
+
+    // Canvas run
+    let guiTime = new Date();
+
+    guiTime = (new Date()) - guiTime;
+    // Pos-run updates
+    this.canvas.draw(this.game.currentState);
+
+    // Running Information
+    this.generation++;
+    this.element.generation.innerHTML = this.generation;
+    this.element.livecells.innerHTML = liveCellNumber;
+
+    let r = 1.0/this.generation;
+    this.times.algorithm = (this.times.algorithm * (1 - r)) + (algorithmTime * r);
+    this.times.gui = (this.times.gui * (1 - r)) + (guiTime * r);
+    this.element.steptime.html(algorithmTime + ' / '+guiTime+' ('+Math.round(this.times.algorithm) + ' / '+Math.round(this.times.gui)+')');
+
+    // Flow Control
+    if (this.running) {
+      this.stats.begin();
+      window.requestAnimationFrame(this.nextStep);
+      this.stats.end();
+    } else if (this.clear.schedule) {
+      this.cleanUp();
+    }
   }
 
   loadConfig() {
@@ -121,7 +156,7 @@ class GOL {
         for (let y in state[i]) {
           for (let j = 0 ; j < state[i][y].length ; j++) {
             //this.game.addCell(state[i][y][j], parseInt(y, 10), this.helper.randomColor(), this.game.currentState);
-            this.game.addCell(state[i][y][j], parseInt(y, 10), this.game.currentState);
+            this.game.currentState.addCell(state[i][y][j], parseInt(y, 10), {color: this.helper.randomColor()});
           }
         }
       }
@@ -132,13 +167,11 @@ class GOL {
    * Create a random pattern
    */
   randomState() {
-    const liveCells = (this.rows * this.columns) * 0.12;
-
+    let liveCells = (this.rows * this.columns) * 0.12;
     for (let i = 0; i < liveCells; i++) {
       //this.game.addCell(this.random(0, this.columns-1), this.random(0, this.rows-1), this.helper.randomColor(), this.game.currentState);
-      this.game.addCell(this.random(0, this.columns-1), this.random(0, this.rows-1), this.game.currentState);
+      this.game.currentState.addCell(this.random(0, this.columns-1), this.random(0, this.rows-1), {color: this.helper.randomColor()});
     }
-    this.game.nextGeneration();
   }
 
   /**
@@ -165,7 +198,7 @@ class GOL {
 
     if (this.autoplay) { // Next Flow
       this.autoplay = false;
-      this.buttons.run();
+      this.buttons.runBtn.click();
     }
   }
 
@@ -178,28 +211,24 @@ class GOL {
     $('body').on('keyup', this.keyboard);
 
     // Controls
-    this.element.buttons.run.on('click', this.run);
-    this.element.buttons.step.on('click', this.step);
-    this.element.buttons.clear.on('click', this.clear);
-    this.element.buttons.export.on('click', this.export);
+    this.element.buttons.runBtn.on('click', this._run.bind(this));
+    this.element.buttons.stepBtn.on('click', this._step.bind(this));
+    this.element.buttons.clearBtn.on('click', this._clear.bind(this));
+    this.element.buttons.exportBtn.on('click', this._export.bind(this));
   }
 
   keyboard(e) {
-    var event = e;
-    if (!event) {
-      event = window.event;
-    }
-
+    var event = e || window.event;
     if (event.keyCode === 67) { // Key: C
-      this.clear();
+      this._clear();
     } else if (event.keyCode === 82 ) { // Key: R
-      this.run();
+      this._run();
     } else if (event.keyCode === 83 ) { // Key: S
-      this.step();
+      this._step();
     }
   }
 
-  run() {
+  _run() {
     this.element.hint.hide();
 
     this.running = !this.running;
@@ -214,7 +243,7 @@ class GOL {
   /**
    * Button Handler - Next Step - One Step only
    */
-  step() {
+  _step() {
     if (!this.running) {
       this.nextStep();
     }
@@ -223,7 +252,7 @@ class GOL {
   /**
    * Button Handler - Clear World
    */
-  clear() {
+  _clear() {
     if (this.running) {
       this.clear.schedule = true;
       this.running = false;
@@ -236,7 +265,7 @@ class GOL {
   /**
    * Button Handler - Export State
    */
-  export() {
+  _export() {
     var url = '', cellState = '', params = '';
 
     for (let i = 0; i < this.game.currentState.length; i++) {
@@ -259,57 +288,6 @@ class GOL {
       $('#exportUrlLink').href = params;
       $('#exportTinyUrlLink').href = 'http://tinyurl.com/api-create.php?url='+ url + params;
       $('#exportUrl').style.display = 'inline';
-    }
-  }
-
-  /**
-   * Run Next Step
-   */
-  nextStep() {
-    // Algorithm run
-    let algorithmTime = new Date();
-    let liveCellNumber = this.game.nextGeneration();
-    algorithmTime = (new Date()) - algorithmTime;
-
-    // Canvas run
-    let guiTime = new Date();
-
-    for (let i = 0; i < this.game.nextState.length; i++) {
-      let x = this.game.nextState[i][0];
-      let y = this.game.nextState[i][1];
-      let color = this.game.nextState[i][2];
-
-      if (this.game.nextState[i][2] === 1) {
-        this.canvas.changeCelltoAlive(x, y, color);
-      } else if (this.game.nextState[i][2] === 2) {
-        this.canvas.keepCellAlive(x, y, color);
-      } else {
-        this.canvas.changeCelltoDead(x, y, color);
-      }
-    }
-
-    guiTime = (new Date()) - guiTime;
-    // Pos-run updates
-
-    this.canvas.draw(this.game.nextState);
-
-    // Running Information
-    this.generation++;
-    this.element.generation.innerHTML = this.generation;
-    this.element.livecells.innerHTML = liveCellNumber;
-
-    let r = 1.0/this.generation;
-    this.times.algorithm = (this.times.algorithm * (1 - r)) + (algorithmTime * r);
-    this.times.gui = (this.times.gui * (1 - r)) + (guiTime * r);
-    this.element.steptime.html(algorithmTime + ' / '+guiTime+' ('+Math.round(this.times.algorithm) + ' / '+Math.round(this.times.gui)+')');
-
-    // Flow Control
-    if (this.running) {
-      this.stats.begin();
-      window.requestAnimationFrame(this.nextStep);
-      this.stats.end();
-    } else if (this.clear.schedule) {
-      this.cleanUp();
     }
   }
 }

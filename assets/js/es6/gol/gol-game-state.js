@@ -1,5 +1,9 @@
 class GOLGameState {
   constructor(){
+    this.reset();
+  }
+
+  reset(){
     this.cells = [];
   }
 
@@ -17,7 +21,7 @@ class GOLGameState {
     return -1;
   }
 
-  isAlive(x, y) {
+  hasCell(x, y) {
     return this.getCellIndex(x, y) !== -1;
   }
 
@@ -28,28 +32,25 @@ class GOLGameState {
     }
   }
 
-  addCell(x, y, color) {
-    var cell = new Cell(x, y, color);
-    if (this.cells.length === 0) { // Empty list, add to Head
+  addCell(x, y, params) {
+    var cellCount = this.cells.length;
+    var cell = new GOLCell(x, y, params);
+    if (cellCount === 0) { // Empty list, add to Head
       this.cells.push(cell);
-      return cell;
-    }
-
-    if (y < this.cells[0].y) { // Add to Head
+    } else if (y < this.cells[0].y) { // Add to Head
       this.cells.unshift(cell);
-      return cell;
-    } else if (y > this.cells[this.cells.length - 1][0]) { // Add to Tail
+    } else if (y > this.cells[cellCount-1].y) { // Add to Tail
       this.cells.push(cell);
-      return cell;
     } else { // Add to Middle
-      for (let n = 0; n < this.cells.length; n++) {
+      for (let n = 0; n < cellCount; n++) {
         if (this.cells[n].y < y) { continue; }
-        while (this.cells[n].y === y && this.cells[n].x < x && n < this.cells.length) {
+        while (n < cellCount && this.cells[n].y === y && this.cells[n].x < x) {
           n++;
         }
         this.cells.splice(n-1, 0, cell);
-        return cell;
+        break;
       }
     }
+    return cell;
   }
 }
