@@ -4,6 +4,8 @@ class GOLCell {
     this.y = y;
     this.color = color;
   }
-}
 
-export { GOLCell }
+  isAt(x, y){
+    return this.x === x && this.y === y;
+  }
+}

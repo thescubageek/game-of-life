@@ -13,5 +13,3 @@ class GOLZoom {
     })
   }
 }
-
-export { GOLZoom }

@@ -10,7 +10,7 @@ var gulp       = require('gulp'),
     shell = require('gulp-shell');
 
 var paths = {
-  es2015: ['assets/js/es6/*.js'],
+  es2015: ['assets/js/es6/*.js','assets/js/es6/gol/*.js'],
   scss:   ['assets/css/scss/*.scss']
 };
 
@@ -26,7 +26,13 @@ gulp.task('es2015', function()  {
       var a = s.split('/');
       path.dirname = s.replace(a[a.length-1], '');
     }))
-    .pipe(gulp.dest(function(file) { return "assets/js"; }))
+    .pipe(gulp.dest(function(file) {
+      if (file.base.indexOf('gol') !== -1){
+        return "assets/js/gol";
+      } else {
+        return "assets/js";
+      }
+    }))
     .pipe(livereload());
 });
 

@@ -1,10 +1,3 @@
-import GOLStats from 'gol/gol-stats';
-import GOLHelper from 'gol/'
-import GOLZoom from 'gol/gol-zoom';
-import GOLCell from 'gol/gol-cell';
-import GOLGameState from 'gol/gol-game-state';
-import GOLCanvas from 'gol/gol-canvas';
-
 class GOL {
   constructor(){
     this.stats = new GOLStats();
@@ -13,8 +6,8 @@ class GOL {
   }
 
   setup(){
-    this.setupVars();
     this.setupZoom();
+    this.setupVars();
     this.setupElements();
     this.setupStates();
   }
@@ -26,7 +19,6 @@ class GOL {
     this.running = false;
     this.autoplay = false;
     this.urlParameters = null;
-    this.helper = new GOLHelper();
   }
 
   setupZoom(){
@@ -57,24 +49,26 @@ class GOL {
 
   setupStates(){
     this.initialState = '[{"39":[110]},{"40":[112]},{"41":[109,110,113,114,115]}]';
-    this.trail = { current: true, schedule : false };
     this.times = { algorithm : 0, gui : 0 };
     this.clear = { schedule: false };
   }
 
-  setupCanvas(){
+  loadCanvas(){
+    this.helper = new GOLHelper();
     this.canvas = new GOLCanvas({
+      game: this.game,
       columns: this.columns,
       rows: this.rows,
       zoom: this.zoom.schemes[this.zoom.current].cellSize
     }); // Setup render canvas
+    this.canvas.clear();
   }
 
   initialize(){
     this.game = new GOLGameState();  // Reset/init algorithm
     this.loadConfig();          // Load config from URL (autoplay, colors, zoom, ...)
     this.loadGameState();           // Load state from URL
-    this.canvas.init();     // Init canvas GUI
+    this.loadCanvas();     // Init canvas GUI
     this.registerEvents();  // Register event handlers
     this.prepare();
   }
@@ -85,7 +79,6 @@ class GOL {
 
   loadConfig() {
     this.autoplay = this.getUrlParameter('autoplay') === '1' ? true : this.autoplay;
-    this.trail.current = this.getUrlParameter('trail') === '1' ? true : this.trail.current;
 
     // Initial zoom config
     let zoom = parseInt(this.getUrlParameter('zoom'), 10);
@@ -127,7 +120,8 @@ class GOL {
       for (let i = 0; i < state.length; i++) {
         for (let y in state[i]) {
           for (let j = 0 ; j < state[i][y].length ; j++) {
-            this.game.addCell(state[i][y][j], parseInt(y, 10), this.helper.randomColor(), this.game.currentState);
+            //this.game.addCell(state[i][y][j], parseInt(y, 10), this.helper.randomColor(), this.game.currentState);
+            this.game.addCell(state[i][y][j], parseInt(y, 10), this.game.currentState);
           }
         }
       }
@@ -141,7 +135,8 @@ class GOL {
     const liveCells = (this.rows * this.columns) * 0.12;
 
     for (let i = 0; i < liveCells; i++) {
-      this.game.addCell(this.random(0, this.columns-1), this.random(0, this.rows-1), this.helper.randomColor(), this.game.currentState);
+      //this.game.addCell(this.random(0, this.columns-1), this.random(0, this.rows-1), this.helper.randomColor(), this.game.currentState);
+      this.game.addCell(this.random(0, this.columns-1), this.random(0, this.rows-1), this.game.currentState);
     }
     this.game.nextGeneration();
   }
@@ -165,8 +160,8 @@ class GOL {
     this.element.livecells.html('0');
     this.element.steptime.html('0 / 0 (0 / 0)');
 
-    this.canvas.clearWorld(); // Reset GUI
-    this.canvas.drawWorld(); // Draw State
+    this.canvas.clear(); // Reset GUI
+    this.canvas.draw(this.game.currentState); // Draw State
 
     if (this.autoplay) { // Next Flow
       this.autoplay = false;
@@ -187,9 +182,6 @@ class GOL {
     this.element.buttons.step.on('click', this.step);
     this.element.buttons.clear.on('click', this.clear);
     this.element.buttons.export.on('click', this.export);
-
-    // Layout
-    this.element.buttons.trail.on('click', this.trail);
   }
 
   keyboard(e) {
@@ -242,19 +234,6 @@ class GOL {
   }
 
   /**
-   * Button Handler - Remove/Add Trail
-   */
-  trail() {
-    this.element.messages.layout.html(this.trail.current ? 'Trail is Off' : 'Trail is On');
-    this.trail.current = !this.trail.current;
-    if (this.running) {
-      this.trail.schedule = true;
-    } else {
-      this.canvas.drawWorld();
-    }
-  }
-
-  /**
    * Button Handler - Export State
    */
   export() {
@@ -274,7 +253,6 @@ class GOL {
       url = (window.location.href.indexOf('?') === -1) ? window.location.href : window.location.href.slice(0, window.location.href.indexOf('?'));
 
       params = '?autoplay=0' +
-      '&trail=' + (this.trail.current ? '1' : '0') +
       '&zoom=' + (this.zoom.current + 1) +
       '&s=['+ cellState +']';
 
@@ -313,11 +291,7 @@ class GOL {
     guiTime = (new Date()) - guiTime;
     // Pos-run updates
 
-    // Clear Trail
-    if (this.trail.schedule) {
-      this.trail.schedule = false;
-      this.canvas.drawWorld();
-    }
+    this.canvas.draw(this.game.nextState);
 
     // Running Information
     this.generation++;
@@ -335,9 +309,7 @@ class GOL {
       window.requestAnimationFrame(this.nextStep);
       this.stats.end();
     } else if (this.clear.schedule) {
-        this.cleanUp();
+      this.cleanUp();
     }
   }
 }
-
-export { GOL }

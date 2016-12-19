@@ -1,0 +1,1 @@
+"use strict";function _classCallCheck(t,s){if(!(t instanceof s))throw new TypeError("Cannot call a class as a function")}var GOLStats=function t(){_classCallCheck(this,t),this.stats=new Stats,this.stats.setMode(0),$(this.stats.domElement).css({position:"absolute",right:"0px",bottom:"0px",zIndex:"-999999"}),$("body").append(this.stats.domElement)};

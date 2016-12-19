@@ -2,7 +2,7 @@ class GOLHelper {
   /**
    * Create a random pattern
    */
-  get randomColor() {
+  randomColor() {
     let letters = '0123456789ABCDEF';
     let color = '#';
     for (let i = 0; i < 6; i++ ) {
@@ -11,5 +11,3 @@ class GOLHelper {
     return color;
   }
 }
-
-export { GOLHelper }

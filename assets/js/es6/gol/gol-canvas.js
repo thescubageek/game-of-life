@@ -1,19 +1,18 @@
-import GOLHelper from 'gol-helper';
-
 class GOLCanvas {
   constructor(configs){
     this.configs = configs;
     this.setup();
-    this.clearWorld();
+    this.clear();
   }
 
-  setupVars(){
+  setup(){
     this.context = null;
     this.width = null;
     this.height = null;
     this.age = null;
     this.helper = new GOLHelper();
-    this.cellList = [];
+    this.game = this.configs['game'];
+    this.cellList = null;
 
     this.columns = this.configs['columns'];
     this.rows = this.configs['rows'];
@@ -23,6 +22,7 @@ class GOLCanvas {
     this.canvasElem = $('#canvas');
     this.canvas = this.canvasElem[0];
     this.context = this.canvas.getContext('2d');
+    this.trail = { current: true, schedule : false };
 
     this.handlers = { mouseDown: false, lastX: 0, lastY: 0 }
 
@@ -31,22 +31,22 @@ class GOLCanvas {
     $(document).on('mouseup', this.configs['mouseup']);
   }
 
-  clearWorld() {
+  clear() {
     // Init ages (Canvas reference)
     this.age = [];
-    for (let i = 0; i < GOL.columns; i++) {
+    for (let i = 0; i < this.columns; i++) {
       this.age[i] = [];
-      for (let j = 0; j < GOL.rows; j++) {
+      for (let j = 0; j < this.rows; j++) {
         this.age[i][j] = 0; // Dead
       }
     }
   }
 
-  /**
-   * drawWorld
-   */
-  drawWorld(list=[]) {
+  draw(list=[]) {
     this.cellList = list;
+    if (this.trail.schedule) {
+      this.trail.schedule = false;
+    }
     this.setDimensions();
 
     // Fill background
@@ -54,9 +54,9 @@ class GOLCanvas {
 
     for (let i = 0 ; i < this.columns; i++) {
       for (let j = 0 ; j < this.rows; j++) {
-        let cell = this.cellList.getCell(i, j);
+        let cell = this.game.getCell(i, j);
         let alive = cell ? true : false;
-        let color = cell ? cell[2] : '#000000';
+        let color = cell && cell[2] ? cell[2] : '#ff0000';
 
         this.context.fillStyle = color;
         this.drawCell(i, j, color, alive);
@@ -119,8 +119,9 @@ class GOLCanvas {
       this.cellList.removeCell(i, j);
       this.changeCelltoDead(i, j, '#000000');
     } else {
-      let color = this.helper.randomColor();
-      this.cellList.addCell(i, j, color, this.cellList.currentState);
+      //let color = this.helper.randomColor();
+      //this.cellList.addCell(i, j, color, this.cellList.currentState);
+      this.game.addCell(i, j, this.cellList.currentState);
       this.changeCelltoAlive(i, j, color);
     }
   }
@@ -213,5 +214,3 @@ class GOLCanvas {
     }
   }
 }
-
-export { GOLCanvas }

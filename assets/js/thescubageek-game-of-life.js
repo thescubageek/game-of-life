@@ -1,1 +1,1 @@
-"use strict";function _interopRequireDefault(e){return e&&e.__esModule?e:{"default":e}}var _gol=require("gol/gol"),_gol2=_interopRequireDefault(_gol);$(document).on("ready",function(){new _gol2["default"]});
+"use strict";var thisGOL=new GOL;
